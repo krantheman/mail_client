@@ -367,7 +367,11 @@ const deleteMail = createResource({
 		reloadMails()
 		raiseToast(__('Draft discarded.'))
 	},
-	onError: (error) => raiseToast(error.message, 'error'),
+	onError: (error) => {
+		isDiscarding.value = false
+		show.value = true
+		raiseToast(error.message, 'error')
+	},
 })
 
 const isLoading = computed(() => createMail.loading || updateDraft.loading || deleteMail.loading)

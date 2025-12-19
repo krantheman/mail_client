@@ -284,9 +284,10 @@ watchDebounced(mail, () => saveDraft(), { debounce: 2000 })
 // Actions
 
 const isSavingDraft = ref(false)
+const isDiscarding = ref(false)
 
 const saveDraft = async () => {
-	if (!isDraftUpdated.value || isLoading.value) return
+	if (!isDraftUpdated.value || isLoading.value || isDiscarding.value) return
 
 	isSavingDraft.value = true
 	if (mail.id) await updateDraft.submit()
@@ -306,6 +307,7 @@ const sendMail = () => {
 const discardMail = () => {
 	if (isLoading.value) return
 
+	isDiscarding.value = true
 	show.value = false
 	if (mail.id) deleteMail.submit()
 	else emit('discardMail')
@@ -358,7 +360,6 @@ const updateDraft = createResource({
 	onError: (error) => raiseToast(error.message, 'error'),
 })
 
-// todo: discard just before saving doesn't work properly
 const deleteMail = createResource({
 	url: 'mail.api.mail.delete_mail',
 	makeParams: () => ({ id: mail.id }),

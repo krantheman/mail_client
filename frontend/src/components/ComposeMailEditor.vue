@@ -271,13 +271,17 @@ const originalMail = ref<ComposeMailData>()
 const updateOriginalMail = () => (originalMail.value = JSON.parse(JSON.stringify(mail)))
 const isDraftUpdated = computed(() => JSON.stringify(mail) !== JSON.stringify(originalMail.value))
 
+const isDiscarding = ref(false)
+
 onMounted(() => {
 	updateOriginalMail()
 	if (!mailDetails?.in_reply_to) setTimeout(() => toInput.value?.setFocus(), 50)
 	else textEditor.value.editor.commands.focus()
 })
 
-onUnmounted(() => saveDraft())
+onUnmounted(() => {
+	if (!isDiscarding.value) saveDraft()
+})
 
 watchDebounced(mail, () => saveDraft(), { debounce: 2000 })
 
@@ -286,7 +290,7 @@ watchDebounced(mail, () => saveDraft(), { debounce: 2000 })
 const isSavingDraft = ref(false)
 
 const saveDraft = async () => {
-	if (!isDraftUpdated.value || isLoading.value) return
+	if (!isDraftUpdated.value || isLoading.value || isDiscarding.value) return
 
 	isSavingDraft.value = true
 	if (mail.id) await updateDraft.submit()
@@ -306,6 +310,7 @@ const sendMail = () => {
 const discardMail = () => {
 	if (isLoading.value) return
 
+	isDiscarding.value = true
 	show.value = false
 	if (mail.id) deleteMail.submit()
 	else emit('discardMail')
@@ -358,7 +363,6 @@ const updateDraft = createResource({
 	onError: (error) => raiseToast(error.message, 'error'),
 })
 
-// todo: discard just before saving doesn't work properly
 const deleteMail = createResource({
 	url: 'mail.api.mail.delete_mail',
 	makeParams: () => ({ id: mail.id }),

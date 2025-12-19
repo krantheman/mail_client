@@ -309,8 +309,13 @@ const discardMail = () => {
 
 	isDiscarding.value = true
 	show.value = false
-	if (mail.id) deleteMail.submit()
-	else emit('discardMail')
+	if (mail.id) {
+		deleteMail.submit()
+	} else {
+		emit('discardMail')
+		// Reset flag for components that persist after hiding (e.g., on desktop)
+		isDiscarding.value = false
+	}
 }
 
 defineExpose({ sendMail, discardMail })
@@ -364,6 +369,7 @@ const deleteMail = createResource({
 	url: 'mail.api.mail.delete_mail',
 	makeParams: () => ({ id: mail.id }),
 	onSuccess: () => {
+		isDiscarding.value = false
 		reloadMails()
 		raiseToast(__('Draft discarded.'))
 	},

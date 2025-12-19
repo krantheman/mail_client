@@ -24,3 +24,18 @@ def get_contact_cards(filter=None, limit=50) -> list[dict]:
 
 	fields = ["id", "full_name", "kind", "emails"]
 	return [{f: d[f] for f in fields} for d in contact_cards]
+
+
+@frappe.whitelist()
+def get_contacts(txt: str) -> list[dict]:
+	"""Returns the emails contacts for the current user."""
+
+	contacts = []
+	contact_cards = get_contact_cards({"text": txt})
+
+	for card in contact_cards:
+		if emails := card.get("emails"):
+			for email in emails:
+				contacts.append({"full_name": card.get("full_name"), "email": email.get("address")})
+
+	return contacts

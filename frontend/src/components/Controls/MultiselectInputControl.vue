@@ -145,23 +145,16 @@ const displayedValues = computed(() => {
 })
 
 const mailContacts = createResource({
-	url: 'mail.api.mail.get_mail_contacts',
-	makeParams: (params: { txt: string }) => ({ txt: params.txt }),
-	transform: (data: Array<{ full_name?: string; email: string; user_image?: string }>) =>
-		data
-			.filter((option) => option.email)
-			.map((option) => ({
-				label: option.full_name || option.email,
-				value: option.email,
-				image: option.user_image,
-			})),
-	auto: false,
+	url: 'mail.api.contacts.get_contacts',
+	makeParams: (txt: string) => ({ txt }),
+	transform: (data) =>
+		data.map((contact) => ({
+			label: contact.full_name || contact.email,
+			value: contact.email,
+		})),
 })
 
-const debouncedSearch = useDebounceFn(
-	(searchText: string) => mailContacts.reload({ txt: searchText }),
-	300,
-)
+const debouncedSearch = useDebounceFn((val: string) => mailContacts.reload(val), 300)
 
 const options = computed<Option[]>(() => {
 	const searchedContacts =

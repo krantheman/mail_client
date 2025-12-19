@@ -358,6 +358,7 @@ const updateDraft = createResource({
 	onError: (error) => raiseToast(error.message, 'error'),
 })
 
+// todo: discard just before saving doesn't work properly
 const deleteMail = createResource({
 	url: 'mail.api.mail.delete_mail',
 	makeParams: () => ({ id: mail.id }),

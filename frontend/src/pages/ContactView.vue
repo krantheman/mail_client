@@ -4,6 +4,17 @@
 			<Dropdown :options="DROPDOWN_OPTIONS">
 				<Button icon="more-horizontal" class="text-ink-gray-5" />
 			</Dropdown>
+			<template v-if="contact.doc.emails.length">
+				<Button
+					v-if="contact.doc.emails.length === 1"
+					:icon-left="Mail"
+					:label="__('Send Mail')"
+					@click="showSendMail = true"
+				/>
+				<Dropdown v-else :options="sendMailOptions">
+					<Button :icon-left="Mail" :label="__('Send Mail')" />
+				</Dropdown>
+			</template>
 		</template>
 		<template #default>
 			<div class="grid grid-cols-2 gap-5">
@@ -35,9 +46,7 @@
 						:columns="ADDRESS_BOOK_COLUMNS"
 						:rows="contact.doc.address_books"
 						row-key="address_book_id"
-						:options="{
-							emptyState: { title: '', description: __('No address books.') },
-						}"
+						:options="ADDRESS_BOOK_OPTIONS"
 						class="flex-1 overflow-auto p-4"
 					>
 						<ListHeader />
@@ -204,12 +213,13 @@
 	<Dialog v-model="showRemoveEmails" :options="removeEmailsOptions" />
 	<Dialog v-model="showRemovePhones" :options="removePhonesOptions" />
 	<Dialog v-model="showRemoveAddresses" :options="removeAddressesOptions" />
+	<SendMail v-model="showSendMail" :mail-details="{ to: [sendMailTo] }" />
 </template>
 
 <script setup lang="ts">
 import { computed, inject, ref, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
-import { Trash2 } from 'lucide-vue-next'
+import { Mail, Trash2 } from 'lucide-vue-next'
 import {
 	Button,
 	Dialog,
@@ -232,6 +242,7 @@ import AddContactAddressModal from '@/components/Modals/AddContactAddressModal.v
 import AddContactEmailModal from '@/components/Modals/AddContactEmailModal.vue'
 import AddContactPhoneModal from '@/components/Modals/AddContactPhoneModal.vue'
 import EditContactModal from '@/components/Modals/EditContactModal.vue'
+import SendMail from '@/components/SendMail.vue'
 
 const { contactName } = defineProps<{ contactName: string }>()
 
@@ -250,10 +261,15 @@ const showRemoveEmails = ref(false)
 const showRemovePhones = ref(false)
 const showRemoveAddresses = ref(false)
 const showDeleteContact = ref(false)
+const sendMailTo = ref('')
+const showSendMail = ref(false)
 
 const contact = createDocumentResource({
 	doctype: 'Contact Card',
 	name: `${user.data.name}|${contactName}`,
+	onSuccess: (doc) => {
+		sendMailTo.value = doc.emails.length ? doc.emails[0].address : ''
+	},
 	onError: () => router.replace({ name: 'Contacts' }),
 	setValue: {
 		onSuccess: () => raiseToast(__('Contact updated.')),
@@ -373,6 +389,24 @@ const breadcrumbs = computed(() => [
 	{ label: __('Contacts'), route: '/contacts' },
 	{ label: contact.doc?.full_name || contactName },
 ])
+
+const sendMailOptions = computed(() =>
+	contact.doc?.emails.map((e) => ({
+		label: e.address,
+		onClick: () => {
+			sendMailTo.value = e.address
+			showSendMail.value = true
+		},
+	})),
+)
+
+const ADDRESS_BOOK_OPTIONS = {
+	emptyState: { title: '', description: __('No address books.') },
+	getRowRoute: (row) => ({
+		name: 'AddressBook',
+		params: { addressBookName: row.address_book_id },
+	}),
+}
 
 const ADDRESS_BOOK_COLUMNS = [{ label: __('Name'), key: 'address_book_name' }]
 
